@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>잠실 아파트 리포트</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- PDF 변환을 위한 html2canvas와 jsPDF 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Basic Reset & Body Styling */
+        body, h1, h2, h3, p, div, section, table, th, td { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; background-color: #f4f4f4; color: #333; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: #fff; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1) ; border-radius: 8px; }
+
+        /* Header */
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #007bff; padding-bottom: 15px; }
+        .header h1 { color: #007bff; margin-bottom: 5px; font-size: 2em; }
+        .header p { font-size: 1.1em; color: #555; }
+        
+        /* 상단 액션 버튼 그룹 */
+        .action-buttons {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        
+        .action-buttons .btn {
+            margin-left: 10px;
+        }
+        
+        /* PDF 생성 중 로딩 표시 */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loading-spinner {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #007bff;
+            width: 80px;
+            height: 80px;
+            animation: spin 2s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 18px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Section Styling */
+        .section { margin-bottom: 30px; padding: 20px; background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px; }
+        .section h2 { color: #0056b3; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px; font-size: 1.5em; }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #e9ecef; font-weight: bold; color: #495057; }
+        td { background-color: #fff; }
+        tr:nth-child(even) td { background-color: #f8f9fa; }
+
+        /* Specific Sections */
+        .basic-info table td:first-child { width: 30%; font-weight: 500; }
+        .transaction-info table td:first-child { width: 25%; font-weight: 500; }
+
+        /* Graph Area */
+        .graph-area { text-align: center; }
+        .graph-area canvas { max-width: 100%; height: auto; margin-top: 15px; margin-bottom: 20px; }
+
+        /* Rank & Comparison */
+        .rank-comparison p { margin-bottom: 10px; }
+        
+        /* Radar Chart */
+        .radar-chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        /* Comparison Chart */
+        .comparison-chart {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .comparison-item {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        
+        .comparison-item h4 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #0056b3;
+            font-size: 1.2em;
+        }
+
+        /* Summary & Recommendation */
+        .summary p, .recommendation p { margin-bottom: 15px; text-align: justify; }
+
+        /* Tags */
+        .tags span { display: inline-block; background-color: #007bff; color: #fff; padding: 5px 10px; margin: 5px 5px 5px 0; border-radius: 15px; font-size: 0.9em; }
+
+        /* Map Section */
+        .map-section {
+            margin-bottom: 30px;
+        }
+        
+        .map-container {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .route-info {
+            margin-top: 15px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .route-info h4 {
+            margin-bottom: 10px;
+            color: #0056b3;
+        }
+        
+        .route-info ul {
+            padding-left: 20px;
+        }
+        
+        .route-info li {
+            margin-bottom: 5px;
+        }
+
+        /* Footer */
+        .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee; font-size: 0.9em; color: #777; }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            .header h1 { font-size: 1.5em; }
+            .header p { font-size: 1em; }
+            .section { padding: 15px; }
+            .section h2 { font-size: 1.3em; }
+            th, td { padding: 8px; font-size: 0.9em; }
+            .comparison-chart {
+                flex-direction: column;
+            }
+            .map-container {
+                height: 300px;
+            }
+        }
+        
+        /* 인프라 아이콘 스타일 */
+        .infra-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .infra-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: calc(20% - 15px);
+            min-width: 100px;
+            padding: 15px 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .infra-item i {
+            font-size: 2em;
+            color: #007bff;
+            margin-bottom: 8px;
+        }
+        
+        .infra-item span {
+            text-align: center;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .infra-item {
+                width: calc(33.33% - 10px);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .infra-item {
+                width: calc(50% - 10px);
+            }
+        }
+        
+        /* 아파트 행 클릭 가능 스타일 */
+        .apt-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .apt-row:hover {
+            background-color: #f0f7ff !important;
+        }
+        
+        /* 클릭 가능한 아파트 이름 스타일 */
+        .clickable-apt {
+            color: #0056b3;
+            font-weight: bold;
+            text-decoration: underline;
+            cursor: pointer;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background-color: rgba(0, 123, 255, 0.1);
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+        
+        .clickable-apt:hover {
+            background-color: rgba(0, 123, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .clickable-apt:active {
+            background-color: rgba(0, 123, 255, 0.3);
+            transform: translateY(0);
+        }
+        
+        /* 아파트 상세 모달 스타일 */
+        .apt-score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin: 0 auto;
+        }
+        
+        .pros-cons-box {
+            padding: 15px;
+            border-radius: 8px;
+            height: 100%;
+        }
+        
+        .pros-cons-box.pros {
+            background-color: #e8f4ff;
+            border-left: 4px solid #007bff;
+        }
+        
+        .pros-cons-box.cons {
+            background-color: #fff0f0;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .pros-cons-box h6 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .pros-cons-box ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+        
+        .pros-cons-box li {
+            margin-bottom: 5px;
+        }
+        
+        .conclusion-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .conclusion-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            background-color: #f8f9fa;
+            font-size: 0.9em;
+            color: #495057;
+        }
+        
+        .conclusion-tag.highlight {
+            background-color: #007bff;
+            color: white;
+        }
+
+        /* 모달 크기 및 스크롤 조정 */
+        .modal-xl {
+            max-width: 1200px;
+        }
+
+        .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* 등급 표시 */
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: white;
+        }
+
+        .rank-A {
+            background-color: #28a745; /* 초록 */
+        }
+
+        .rank-B {
+            background-color: #17a2b8; /* 파랑 */
+        }
+
+        .rank-C {
+            background-color: #ffc107; /* 노랑 */
+        }
+
+        .rank-D {
+            background-color: #fd7e14; /* 주황 */
+        }
+
+        .rank-E {
+            background-color: #dc3545; /* 빨강 */
+        }
+
+        /* 평가 점수 막대 그래프 */
+        .score-bar-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .score-label {
+            width: 80px;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .score-bar-outer {
+            flex-grow: 1;
+            height: 15px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .score-bar-inner {
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .score-value {
+            width: 30px;
+            text-align: right;
+            margin-left: 10px;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        /* 비교 테이블 */
+        .comparison-table th {
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+
+        .comparison-table td {
+            text-align: center;
+        }
+
+        .current-apt {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        /* 해시태그 */
+        .hashtags {
+            margin-top: 15px;
+        }
+
+        .hashtag {
+            display: inline-block;
+            background-color: #f1f1f1;
+            color: #555;
+            padding: 5px 12px;
+            border-radius: 15px;
+            margin: 0 5px 5px 0;
+            font-size: 0.85em;
+        }
+
+        .modal-conclusion {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #007bff;
+        }
+
+        /* 모달 PDF 버튼 */
+        .modal-pdf-btn {
+            position: absolute;
+            right: 60px;
+            top: 13px;
+            z-index: 1051;
+        }
+
+        /* 실거래가 테이블 */
+        .trade-info-table th {
+            background-color: #f1f1f1;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .trade-info-table td {
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .price-highlight {
+            font-weight: bold;
+            color: #dc3545;
+        }
+
+        .date-info {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+
+        /* 인라인 아파트 상세 정보 스타일 */
+        .selected-row {
+            background-color: #e8f4ff !important;
+        }
+
+        .apt-detail-row {
+            background-color: #f8f9fa;
+        }
+
+        .apt-detail-container {
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .apt-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .apt-detail-content {
+            padding: 10px;
+        }
+
+        .score-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .pros-cons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .pros, .cons {
+            flex: 1;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .pros {
+            background-color: #e8f4ff;
+            border-left: 3px solid #007bff;
+        }
+
+        .cons {
+            background-color: #fff0f0;
+            border-left: 3px solid #dc3545;
+        }
+
+        .pros h5, .cons h5 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .pros ul, .cons ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+
+        .pros li, .cons li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">PDF 생성 중입니다...</div>
+    </div>
+    
+    <div class="container">
+        <div class="action-buttons">
+            <button id="print-btn" class="btn btn-secondary"><i class="fas fa-print"></i> 인쇄</button>
+            <button id="pdf-btn" class="btn btn-primary"><i class="fas fa-file-pdf"></i> PDF 저장</button>
+            <a href="index.html" class="btn btn-outline-primary"><i class="fas fa-home"></i> 메인으로</a>
+        </div>
+        
+        <header class="header">
+            <h1>잠실 아파트 리포트</h1>
+            <p>서울특별시 송파구 잠실동 일대</p>
+        </header>
+
+        <section class="section basic-info">
+            <h2>지역 기본 정보</h2>
+            <table>
+                <tr><th>항목</th><th>내용</th></tr>
+                <tr><td>지역</td><td>서울특별시 송파구 잠실동, 신천동</td></tr>
+                <tr><td>행정구역</td><td>잠실본동, 잠실2동, 잠실3동, 잠실4동, 잠실6동, 잠실7동</td></tr>
+                <tr><td>특징</td><td>한강변에 위치한 대규모 아파트 단지 밀집 지역</td></tr>
+                <tr><td>교통</td><td>지하철 2호선(잠실역, 잠실나루역), 8호선(잠실역), 9호선(잠실역) 이용 가능</td></tr>
+                <tr><td>주요 도로</td><td>올림픽대로, 송파대로, 잠실대교</td></tr>
+                <tr><td>주요 시설</td><td>롯데월드타워, 석촌호수, 올림픽공원, 잠실종합운동장</td></tr>
+                <tr><td>상권</td><td>롯데월드몰, 송리단길, 방이동 먹자골목 등</td></tr>
+                <tr><td>주요 기업</td><td>삼성 SDS, 쿠팡, 씨젠 등 기업 사옥</td></tr>
+            </table>
+        </section>
+
+        <section class="section transaction-info">
+            <h2>주요 아파트 정보 (2025년 기준)</h2>
+            <table>
+                <tr><th>아파트명</th><th>전용면적(㎡/평형)</th><th>매매가격(억원)</th><th>전세가격(억원)</th><th>준공년도</th></tr>
+                <tr class="apt-row" data-apt-name="잠실엘스" data-apt-type="래미안계열" data-apt-rooms="3" data-apt-baths="2" data-apt-parking="1.2" data-apt-score="92" data-apt-pros="한강 조망, 트리플 역세권, 우수한 학군" data-apt-cons="고층부 바람, 롯데월드몰 방향 소음"><td><span class="clickable-apt">잠실엘스</span></td><td>84㎡(25평형)</td><td>20.3~22.5</td><td>9.8~11.0</td><td>2008년</td></tr>
+                <tr class="apt-row" data-apt-name="잠실엘스" data-apt-type="래미안계열" data-apt-rooms="4" data-apt-baths="2" data-apt-parking="1.2" data-apt-score="93" data-apt-pros="넓은 거실, 한강 조망, 집안 구조 우수" data-apt-cons="고가 유지비, 대형평수 관리비 부담"><td><span class="clickable-apt">잠실엘스</span></td><td>109㎡(33평형)</td><td>24.8~29.0</td><td>11.0~14.0</td><td>2008년</td></tr>
+                <tr class="apt-row" data-apt-name="잠실리센츠" data-apt-type="래미안계열" data-apt-rooms="3" data-apt-baths="2" data-apt-parking="1.4" data-apt-score="91" data-apt-pros="한강 조망 우수, 넓은 동간 거리, 커뮤니티 시설" data-apt-cons="일부 동 일조량 부족, 주차공간 협소"><td><span class="clickable-apt">잠실리센츠</span></td><td>84㎡(24평형)</td><td>21.5~23.0</td><td>10.7~11.0</td><td>2008년</td></tr>
+                <tr class="apt-row" data-apt-name="잠실리센츠" data-apt-type="래미안계열" data-apt-rooms="4" data-apt-baths="2" data-apt-parking="1.4" data-apt-score="92" data-apt-pros="구조 효율성 좋음, 한강 조망, 넓은 주방" data-apt-cons="일부 동 소음 문제, 주차공간 협소"><td><span class="clickable-apt">잠실리센츠</span></td><td>109㎡(33평형)</td><td>24.5~29.6</td><td>11.0~15.5</td><td>2008년</td></tr>
+                <tr class="apt-row" data-apt-name="트리지움" data-apt-type="대우계열" data-apt-rooms="3" data-apt-baths="2" data-apt-parking="1.3" data-apt-score="89" data-apt-pros="석촌호수 인접, 단지 내 편의시설 우수" data-apt-cons="일부 동 일조량 부족, 외부 소음"><td><span class="clickable-apt">트리지움</span></td><td>84㎡(25평형)</td><td>19.8~21.5</td><td>9.5~10.3</td><td>2007년</td></tr>
+                <tr class="apt-row" data-apt-name="트리지움" data-apt-type="대우계열" data-apt-rooms="4" data-apt-baths="2" data-apt-parking="1.3" data-apt-score="90" data-apt-pros="넓은 평형대, 방 구조 효율적, 석촌호수 인접" data-apt-cons="주차 다소 불편, 특정 동 소음"><td><span class="clickable-apt">트리지움</span></td><td>109㎡(33평형)</td><td>22.3~27.0</td><td>10.3~14.0</td><td>2007년</td></tr>
+                <tr class="apt-row" data-apt-name="레이크팰리스" data-apt-type="현대계열" data-apt-rooms="3" data-apt-baths="2" data-apt-parking="1.5" data-apt-score="87" data-apt-pros="석촌호수 조망, 쾌적한 주거환경, 주차 우수" data-apt-cons="지하철역 거리, 일부 시설 노후화"><td><span class="clickable-apt">레이크팰리스</span></td><td>84㎡(26평형)</td><td>18.9~21.0</td><td>9.0~10.0</td><td>2009년</td></tr>
+                <tr class="apt-row" data-apt-name="레이크팰리스" data-apt-type="현대계열" data-apt-rooms="4" data-apt-baths="2" data-apt-parking="1.5" data-apt-score="88" data-apt-pros="넓은 평형, 석촌호수 전망, 주차 편리" data-apt-cons="역세권 대비 접근성 약함, 시설 노후화"><td><span class="clickable-apt">레이크팰리스</span></td><td>115㎡(34평형)</td><td>24.0~26.0</td><td>10.5~13.0</td><td>2009년</td></tr>
+                <tr class="apt-row" data-apt-name="파크리오" data-apt-type="대림계열" data-apt-rooms="3" data-apt-baths="2" data-apt-parking="1.2" data-apt-score="85" data-apt-pros="올림픽공원 인접, 녹지공간, 반려동물 친화적" data-apt-cons="역세권에서 다소 벗어남, 일부 시설 관리 미흡"><td><span class="clickable-apt">파크리오</span></td><td>84㎡(26평형)</td><td>17.5~19.3</td><td>8.8~9.5</td><td>2009년</td></tr>
+                <tr class="apt-row" data-apt-name="파크리오" data-apt-type="대림계열" data-apt-rooms="4" data-apt-baths="2" data-apt-parking="1.2" data-apt-score="86" data-apt-pros="넓은 평형, 올림픽공원 접근성, 조용한 환경" data-apt-cons="대중교통 접근성 약함, 편의시설 부족"><td><span class="clickable-apt">파크리오</span></td><td>115㎡(33평형)</td><td>22.5~25.0</td><td>10.5~13.5</td><td>2009년</td></tr>
+            </table>
+            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">* 위 가격 정보는 최근 실거래가 및 호가 정보를 바탕으로 한 추정치이며, 실제 거래 시점 및 조건에 따라 달라질 수 있습니다.</p>
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i> <strong>아파트 이름을 클릭하면 상세 정보를 볼 수 있습니다!</strong> 각 아파트의 세부 정보, 장단점, 가격 추이 등을 확인해 보세요.
+            </div>
+        </section>
+
+        <section class="section transaction-info">
+            <h2>재건축 예정 아파트 정보</h2>
+            <table>
+                <tr><th>아파트명</th><th>세대수</th><th>전용면적(㎡/평형)</th><th>매매가격(억원)</th><th>준공년도</th><th>재건축 추진 현황</th></tr>
+                <tr><td>잠실주공5단지</td><td>3,930세대</td><td>76~134㎡(29~51평형)</td><td>28.0~35.0</td><td>1978년</td><td>착공 단계, 2027년 완공 예정</td></tr>
+                <tr><td>아시아선수촌</td><td>1,356세대</td><td>76~160㎡(23~52평형)</td><td>24.0~32.0</td><td>1986년</td><td>관리처분인가 완료</td></tr>
+                <tr><td>우성1,2,3차</td><td>1,842세대</td><td>76~174㎡(23~53평형)</td><td>22.0~30.0</td><td>1981년</td><td>사업시행인가 단계</td></tr>
+                <tr><td>장미아파트</td><td>1,284세대</td><td>76~96㎡(23~30평형)</td><td>20.0~25.0</td><td>1983년</td><td>조합설립 완료</td></tr>
+                <tr><td>미성아파트</td><td>996세대</td><td>76~126㎡(23~38평형)</td><td>21.0~28.0</td><td>1983년</td><td>르엘 입주 완료(2024년)</td></tr>
+                <tr><td>진주아파트</td><td>690세대</td><td>76~134㎡(23~42평형)</td><td>21.0~29.0</td><td>1982년</td><td>래미안아이파크 입주 완료(2024년)</td></tr>
+            </table>
+            <p style="font-size: 0.8em; color: #666; margin-top: 10px;">* 재건축 추진 현황은 변동될 수 있으며, 분양 예정 정보는 건설사 계획에 따라 달라질 수 있습니다.</p>
+        </section>
+
+        <section class="section">
+            <h2>최근 3년간 가격 추이 (84㎡ 기준)</h2>
+            <div class="graph-area">
+                <canvas id="priceChart" width="800" height="400"></canvas>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>주변 인프라</h2>
+            <div class="infra-icons">
+                <div class="infra-item">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>롯데월드몰</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-tree"></i>
+                    <span>석촌호수</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-running"></i>
+                    <span>올림픽공원</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-subway"></i>
+                    <span>지하철</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-bus"></i>
+                    <span>광역버스</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>잠실초등학교</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-school"></i>
+                    <span>잠실중학교</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-university"></i>
+                    <span>잠신고등학교</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-hospital"></i>
+                    <span>의료시설</span>
+                </div>
+                <div class="infra-item">
+                    <i class="fas fa-utensils"></i>
+                    <span>송리단길</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3>주요 교육 시설</h3>
+                <table>
+                    <tr><th>구분</th><th>학교명</th><th>위치</th><th>특징</th></tr>
+                    <tr><td>초등학교</td><td>잠실초등학교</td><td>잠실동 27</td><td>1974년 개교, 학급수 34개</td></tr>
+                    <tr><td>초등학교</td><td>송파초등학교</td><td>잠실동 319</td><td>1974년 개교, 학급수 25개</td></tr>
+                    <tr><td>중학교</td><td>잠실중학교</td><td>잠실동 19</td><td>1974년 개교, 공학</td></tr>
+                    <tr><td>중학교</td><td>잠신중학교</td><td>잠실동 27-4</td><td>1989년 개교, 공학</td></tr>
+                    <tr><td>고등학교</td><td>잠실고등학교</td><td>잠실동 305-3</td><td>1978년 개교, 공학</td></tr>
+                    <tr><td>고등학교</td><td>잠신고등학교</td><td>잠실동 27-3</td><td>1984년 개교, 공학</td></tr>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3>주요 상업 시설</h3>
+                <table>
+                    <tr><th>시설명</th><th>위치</th><th>특징</th></tr>
+                    <tr><td>롯데월드타워/몰</td><td>잠실동 40-1</td><td>국내 최고층 건물, 대형 쇼핑몰, 아쿠아리움, 영화관 등</td></tr>
+                    <tr><td>롯데마트 잠실점</td><td>잠실동 40-1</td><td>대형 마트, 식품관 등</td></tr>
+                    <tr><td>송리단길</td><td>송파동 일대</td><td>맛집, 카페, 패션 매장 등 트렌디한 상권</td></tr>
+                    <tr><td>방이동 먹자골목</td><td>방이동 일대</td><td>다양한 음식점이 밀집된 지역</td></tr>
+                    <tr><td>가락시장</td><td>가락동 600</td><td>국내 최대 농수산물 도매시장</td></tr>
+                </table>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>리얼랭커스 아파트 랭크</h2>
+            <div class="rank-comparison">
+                <p>잠실 지역 내 아파트들은 서울 주요 아파트 단지 중에서도 상위권에 속하며, 특히 재건축 단지들이 완공되면 더 높은 랭크가 예상됩니다.</p>
+                
+                <table>
+                    <tr><th>아파트명</th><th>리얼랭커스 순위</th><th>주요 특징</th></tr>
+                    <tr><td>잠실엘스</td><td>서울 TOP 15</td><td>한강변 위치, 트리플 역세권, 우수한 조망권</td></tr>
+                    <tr><td>잠실리센츠</td><td>서울 TOP 20</td><td>한강변 위치, 넓은 동간 거리, 커뮤니티 시설 우수</td></tr>
+                    <tr><td>트리지움</td><td>서울 TOP 25</td><td>석촌호수 인접, 단지 내 편의시설 우수</td></tr>
+                    <tr><td>레이크팰리스</td><td>서울 TOP 30</td><td>석촌호수 조망, 쾌적한 주거환경</td></tr>
+                    <tr><td>파크리오</td><td>서울 TOP 35</td><td>올림픽공원 인접, 넓은 녹지공간</td></tr>
+                </table>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>지역 환경 평가</h2>
+            <div class="radar-chart-container">
+                <canvas id="radarChart" width="600" height="400"></canvas>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3>항목별 상세 평가</h3>
+                <table>
+                    <tr><th>항목</th><th>점수</th><th>특징</th></tr>
+                    <tr><td>주거환경</td><td>9.2/10</td><td>한강, 석촌호수, 올림픽공원 등 우수한 자연환경과 대규모 아파트 단지의 쾌적한 주거 환경</td></tr>
+                    <tr><td>교통여건</td><td>9.5/10</td><td>지하철 2/8/9호선, 올림픽대로 등 편리한 교통망, 강남 접근성 우수</td></tr>
+                    <tr><td>생활인프라</td><td>9.3/10</td><td>롯데월드몰, 송리단길 등 다양한 상업시설과 편의시설 구비</td></tr>
+                    <tr><td>교육환경</td><td>8.8/10</td><td>잠실/송파 지역 내 우수한 학군, 다수의 학원가 형성</td></tr>
+                    <tr><td>미래가치</td><td>9.0/10</td><td>국제교류복합지구 개발, 재건축 사업 등 미래 발전 가능성 높음</td></tr>
+                </table>
+            </div>
+        </section>
+
+        <section class="section map-section" id="route-section">
+            <h2>임장 코스 정보</h2>
+            <div class="route-info">
+                <h4>추천 임장 코스</h4>
+                <p>잠실 아파트 단지를 효율적으로 둘러볼 수 있는 추천 코스입니다.</p>
+                <ol>
+                    <li><strong>출발점:</strong> 지하철 2호선 잠실역 7번 출구</li>
+                    <li><strong>1차 방문:</strong> 잠실 엘스 → 잠실 리센츠 (도보 5분)</li>
+                    <li><strong>2차 방문:</strong> 트리지움 아파트 (도보 7분)</li>
+                    <li><strong>3차 방문:</strong> 레이크팰리스 (도보 8분)</li>
+                    <li><strong>4차 방문:</strong> 파크리오 (버스 이용 10분)</li>
+                    <li><strong>5차 방문:</strong> 잠실주공5단지 (도보 12분)</li>
+                    <li><strong>6차 방문:</strong> 아시아선수촌 아파트 (도보 10분)</li>
+                    <li><strong>마무리:</strong> 석촌호수 산책 후 송리단길 카페에서 휴식</li>
+                </ol>
+                <p><strong>총 소요 시간:</strong> 약 3시간 (휴식 시간 포함)</p>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <h4>단지별 주요 확인 사항</h4>
+                <table>
+                    <tr><th>아파트명</th><th>주요 확인 사항</th></tr>
+                    <tr><td>잠실엘스</td><td>한강 조망 여부, 롯데월드타워 방향 소음, 지하철역 접근성</td></tr>
+                    <tr><td>잠실리센츠</td><td>한강 조망 가능 층수, 동간 거리, 남향 배치 비율</td></tr>
+                    <tr><td>트리지움</td><td>석촌호수 조망 가능 동, 지하주차장 상태, 커뮤니티 시설</td></tr>
+                    <tr><td>레이크팰리스</td><td>석촌호수 조망 층수, 저층부 일조량, 동선 효율성</td></tr>
+                    <tr><td>파크리오</td><td>올림픽공원 접근성, 지하철 접근성, 베란다 확장 상태</td></tr>
+                    <tr><td>잠실주공5단지</td><td>재건축 진행 상황, 단지 내 학교 접근성, 동별 배치도</td></tr>
+                    <tr><td>아시아선수촌</td><td>재건축 진행 상황, 올림픽공원 접근성, 주차 상태</td></tr>
+                </table>
+            </div>
+
+            <div class="map-container" style="margin-top: 30px;">
+                <iframe src="https://www.google.com/maps/d/embed?mid=1ath2BZrd16RE2xQGHW4fMmDnAXcijno&hl=ko&ehbc=2E312F" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>평형별 비교</h2>
+            <div class="comparison-chart">
+                <div class="comparison-item">
+                    <h4>84㎡ (25~26평형)</h4>
+                    <canvas id="chart25p" width="250" height="250"></canvas>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        3~4인 가족 적합, 방 3개, 화장실 2개 구조가 일반적<br>
+                        전용률 평균: 58~60%<br>
+                        평균 매매가: 15억~17억원
+                    </p>
+                </div>
+                <div class="comparison-item">
+                    <h4>109㎡ (33~34평형)</h4>
+                    <canvas id="chart33p" width="250" height="250"></canvas>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        4~5인 가족 적합, 방 4개, 화장실 2개 구조가 일반적<br>
+                        전용률 평균: 58~62%<br>
+                        평균 매매가: 19억~22억원
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section summary">
+            <h2>잠실 지역 종합 평가</h2>
+            <div class="tags">
+                <span>명품 아파트</span>
+                <span>한강변</span>
+                <span>트리플 역세권</span>
+                <span>우수한 교육환경</span>
+                <span>생활 편의성</span>
+                <span>미래가치 상승</span>
+                <span>재건축 기대</span>
+                <span>쾌적한 주거환경</span>
+            </div>
+            
+            <p style="margin-top: 20px;">잠실 지역은 서울 강남권의 대표적인 주거지역으로, 한강변과 석촌호수, 올림픽공원 등이 인접해 있어 쾌적한 주거환경을 갖추고 있습니다. 지하철 2/8/9호선이 지나며 강남 접근성이 우수하고, 롯데월드타워와 롯데월드몰, 송리단길 등의 다양한 상업시설과 문화시설이 잘 갖춰져 있습니다.</p>
+            
+            <p>특히 잠실 지역 내 아파트들은 서울 내에서도 상위권에 속하는 주거지로 평가받으며, 특히 한강변에 위치한 엘스, 리센츠 등은 조망권과 생활 인프라 측면에서 매우 우수합니다. 또한 잠실주공5단지, 아시아선수촌 등의 재건축 사업이 진행 중이어서 향후 지역 가치 상승이 기대됩니다.</p>
+            
+            <p>잠실 지역의 아파트는 가격대가 높은 편이지만, 우수한 입지와 생활 인프라, 교육환경 등을 고려할 때 장기적인 관점에서 안정적인 투자 가치를 가지고 있다고 평가됩니다.</p>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card bg-success text-white">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-thumbs-up"></i> 추천 아파트</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li><strong>잠실엘스</strong> - 한강 조망, 역세권, 우수한 커뮤니티 시설</li>
+                                <li><strong>잠실리센츠</strong> - 한강 조망, 동간 거리 넓음, 투자가치 높음</li>
+                                <li><strong>트리지움</strong> - 석촌호수 인접, 편의시설 우수, 합리적 가격</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-danger text-white">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-thumbs-down"></i> 비추천 아파트</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul>
+                                <li><strong>레이크팰리스</strong> - 지하철역 접근성 약함, 일부 시설 노후화</li>
+                                <li><strong>파크리오</strong> - 대중교통 접근성 약함, 편의시설 부족</li>
+                            </ul>
+                            <p class="small mt-2 mb-0">* 비추천 사유는 개인 상황에 따라 중요도가 달라질 수 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>아파트 리포트 이용 안내</h2>
+            <div style="background-color: #e9f5ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="color: #0056b3; margin-bottom: 15px;"><i class="fas fa-info-circle"></i> 다른 아파트 정보 활용 방법</h4>
+                <p>메인 화면(<a href="index.html" style="color: #0056b3; text-decoration: underline;">index.html</a>)에서 다양한 지역의 아파트 리포트를 확인하실 수 있습니다.</p>
+                <ol style="margin-top: 10px; padding-left: 25px;">
+                    <li>지역별 아파트 검색: 메인화면의 검색창에서 지역명이나 아파트명을 입력하여 원하는 정보를 찾을 수 있습니다.</li>
+                    <li>지도에서 아파트 찾기: 지도에 표시된 아파트 마커를 클릭하면 해당 아파트의 요약 정보를 볼 수 있습니다.</li>
+                    <li>임장 리포트: 각 아파트별 상세 임장 리포트는 아파트 아이콘을 클릭 후 '상세보기' 버튼을 통해 확인할 수 있습니다.</li>
+                </ol>
+                <p style="margin-top: 15px;"><strong>TIP:</strong> 지도 내에서 아파트 마커를 클릭하면 해당 아파트의 기본 정보를 바로 확인할 수 있으며, 여러 아파트를 비교하여 효율적인 임장 계획을 세울 수 있습니다.</p>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="index.html" class="btn btn-primary" style="background-color: #0056b3; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 500;">메인화면으로 이동</a>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>© 2024 아파트 임장 리포트 | 본 자료는 정보 제공 목적으로 작성되었으며, 투자 결정의 참고자료로만 활용하시기 바랍니다.</p>
+        </footer>
+
+        <!-- 아파트 상세 정보 모달 -->
+        <div class="modal fade" id="apartmentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="aptModalTitle">아파트 상세 정보</h5>
+                        <button type="button" class="btn btn-primary modal-pdf-btn" id="modal-pdf-btn">
+                            <i class="fas fa-file-pdf"></i> PDF 저장
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="apartment-modal-content">
+                        <!-- 모달 내용 영역 -->
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <h4 id="modal-apt-full-name" class="mb-3">아파트 이름</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <table class="table table-bordered">
+                                            <tr>
+                                                <th style="width: 30%">주소</th>
+                                                <td id="modal-apt-address">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>세대수</th>
+                                                <td id="modal-apt-units">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>준공일</th>
+                                                <td id="modal-apt-year">-</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <table class="table table-bordered">
+                                            <tr>
+                                                <th style="width: 30%">최고층</th>
+                                                <td id="modal-apt-floors">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>동 수</th>
+                                                <td id="modal-apt-buildings">-</td>
+                                            </tr>
+                                            <tr>
+                                                <th>계열</th>
+                                                <td id="modal-apt-type">-</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="d-flex align-items-center justify-content-center mb-2">
+                                    <span id="modal-apt-rank-badge" class="rank-badge rank-A">A</span>
+                                    <h4 class="mb-0">종합 등급</h4>
+                                </div>
+                                <div class="apt-score-circle mb-2">
+                                    <span id="modal-apt-score">-</span>
+                                </div>
+                                <p class="text-muted">종합 평가 점수</p>
+                            </div>
+                        </div>
+
+                        <!-- 평가 점수 -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="border-bottom pb-2 mb-3">상세 평가 점수</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="score-bar-container">
+                                            <div class="score-label">주거환경</div>
+                                            <div class="score-bar-outer">
+                                                <div id="score-living" class="score-bar-inner" style="width: 85%; background-color: #28a745;"></div>
+                                            </div>
+                                            <div class="score-value" id="score-living-value">8.5</div>
+                                        </div>
+                                        <div class="score-bar-container">
+                                            <div class="score-label">교통</div>
+                                            <div class="score-bar-outer">
+                                                <div id="score-transport" class="score-bar-inner" style="width: 90%; background-color: #17a2b8;"></div>
+                                            </div>
+                                            <div class="score-value" id="score-transport-value">9.0</div>
+                                        </div>
+                                        <div class="score-bar-container">
+                                            <div class="score-label">인프라</div>
+                                            <div class="score-bar-outer">
+                                                <div id="score-infra" class="score-bar-inner" style="width: 80%; background-color: #007bff;"></div>
+                                            </div>
+                                            <div class="score-value" id="score-infra-value">8.0</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="score-bar-container">
+                                            <div class="score-label">교육</div>
+                                            <div class="score-bar-outer">
+                                                <div id="score-edu" class="score-bar-inner" style="width: 95%; background-color: #6f42c1;"></div>
+                                            </div>
+                                            <div class="score-value" id="score-edu-value">9.5</div>
+                                        </div>
+                                        <div class="score-bar-container">
+                                            <div class="score-label">자연환경</div>
+                                            <div class="score-bar-outer">
+                                                <div id="score-nature" class="score-bar-inner" style="width: 75%; background-color: #fd7e14;"></div>
+                                            </div>
+                                            <div class="score-value" id="score-nature-value">7.5</div>
+                                        </div>
+                                        <div class="score-bar-container">
+                                            <div class="score-label">투자가치</div>
+                                            <div class="score-bar-outer">
+                                                <div id="score-invest" class="score-bar-inner" style="width: 88%; background-color: #20c997;"></div>
+                                            </div>
+                                            <div class="score-value" id="score-invest-value">8.8</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 실거래가 정보 -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="border-bottom pb-2 mb-3">최신 실거래가 정보</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered trade-info-table">
+                                        <thead>
+                                            <tr>
+                                                <th>평형</th>
+                                                <th>매매가</th>
+                                                <th>거래일</th>
+                                                <th>층수</th>
+                                                <th>전세가</th>
+                                                <th>거래일</th>
+                                                <th>층수</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="trade-info-body">
+                                            <!-- 실거래가 정보가 동적으로 추가됨 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 가격 추이 그래프 -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="border-bottom pb-2 mb-3">최근 3년간 가격 추이</h5>
+                                <div class="mb-3 text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary active" id="size-25p-btn">25평형</button>
+                                        <button type="button" class="btn btn-outline-primary" id="size-33p-btn">33평형</button>
+                                    </div>
+                                </div>
+                                <canvas id="modal-price-trend-chart" height="250"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- 대표 아파트 비교 -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="border-bottom pb-2 mb-3">대표 아파트 비교</h5>
+                                <div class="mb-3 text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary active" id="compare-25p-btn">25평형</button>
+                                        <button type="button" class="btn btn-outline-primary" id="compare-33p-btn">33평형</button>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <canvas id="modal-compare-chart" height="250"></canvas>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <table class="table table-bordered comparison-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>구분</th>
+                                                    <th id="current-apt-name">현재 아파트</th>
+                                                    <th id="compare-apt-name">비교 아파트</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>매매가</td>
+                                                    <td id="current-sale-price" class="current-apt">-</td>
+                                                    <td id="compare-sale-price">-</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>전세가</td>
+                                                    <td id="current-jeonse-price" class="current-apt">-</td>
+                                                    <td id="compare-jeonse-price">-</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>평당가</td>
+                                                    <td id="current-per-pyeong" class="current-apt">-</td>
+                                                    <td id="compare-per-pyeong">-</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 장단점 -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="pros-cons-box pros">
+                                    <h6><i class="fas fa-thumbs-up"></i> 장점</h6>
+                                    <ul id="modal-apt-pros">
+                                        <li>-</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="pros-cons-box cons">
+                                    <h6><i class="fas fa-thumbs-down"></i> 단점</h6>
+                                    <ul id="modal-apt-cons">
+                                        <li>-</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 결론 -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="modal-conclusion">
+                                    <h5 class="mb-3">종합 의견</h5>
+                                    <p id="modal-conclusion-text">-</p>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>추천하는 분들</h6>
+                                            <ul id="modal-recommended-for">
+                                                <li>-</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>비추천하는 분들</h6>
+                                            <ul id="modal-not-recommended-for">
+                                                <li>-</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="hashtags" id="modal-hashtags">
+                                        <span class="hashtag">#해시태그</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                        <button type="button" class="btn btn-primary" onclick="window.open('https://new.land.naver.com/complexes?ms=37.5177259,127.1176183,17&a=APT:ABYG:JGC&e=RETAIL')">네이버 부동산에서 보기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            // 외부 데이터 소스에서 아파트 정보를 가져오는 함수들
+            const apiSources = {
+                // 리얼랭커스 API 호출 (랭킹 정보)
+                async getRealRankersData(aptName) {
+                    try {
+                        console.log(`리얼랭커스 API 호출: ${aptName}`);
+                        // 실제 API 호출 코드 대신 데모 데이터 반환
+                        // 실제 구현시 fetch 함수 사용하여 API 호출
+                        return {
+                            rankScore: Math.floor(Math.random() * 20) + 80, // 80-100 사이 랜덤 점수
+                            investmentRank: ['A+', 'A', 'A-', 'B+', 'B'][Math.floor(Math.random() * 5)],
+                            priceGrowth: (Math.random() * 10 + 5).toFixed(1), // 5-15% 사이 랜덤 성장률
+                            transactionVolume: Math.floor(Math.random() * 50) + 10, // 10-60 사이 랜덤 거래량
+                            marketSentiment: ['매우 긍정적', '긍정적', '중립', '부정적'][Math.floor(Math.random() * 4)],
+                            futurePotential: Math.floor(Math.random() * 30) + 70, // 70-100 사이 랜덤 점수
+                        };
+                    } catch (error) {
+                        console.error('리얼랭커스 데이터 가져오기 실패:', error);
+                        return null;
+                    }
+                },
+                
+                // 호갱노노 API 호출 (기본 정보)
+                async getHogangData(aptName) {
+                    try {
+                        console.log(`호갱노노 API 호출: ${aptName}`);
+                        // 실제 API 호출 코드 대신 데모 데이터 반환
+                        const baseData = {
+                            '잠실엘스': {
+                                address: '서울시 송파구 잠실동 35-1',
+                                totalUnits: '1,756세대',
+                                constructionYear: '2008년',
+                                maxFloor: '35층',
+                                totalBuildings: '12개동',
+                                constructionCompany: '삼성물산',
+                                managementFee: '42만원',
+                                parkingRatio: '1.2대',
+                            },
+                            '잠실리센츠': {
+                                address: '서울시 송파구 잠실동 19-4',
+                                totalUnits: '1,814세대',
+                                constructionYear: '2008년',
+                                maxFloor: '35층',
+                                totalBuildings: '12개동',
+                                constructionCompany: '삼성물산',
+                                managementFee: '45만원',
+                                parkingRatio: '1.4대',
+                            },
+                            '트리지움': {
+                                address: '서울시 송파구 잠실동 27-1',
+                                totalUnits: '1,320세대',
+                                constructionYear: '2007년',
+                                maxFloor: '32층',
+                                totalBuildings: '10개동',
+                                constructionCompany: '대우건설',
+                                managementFee: '37만원',
+                                parkingRatio: '1.3대',
+                            },
+                            '레이크팰리스': {
+                                address: '서울시 송파구 잠실동 38-4',
+                                totalUnits: '1,045세대',
+                                constructionYear: '2009년',
+                                maxFloor: '30층',
+                                totalBuildings: '8개동',
+                                constructionCompany: '현대건설',
+                                managementFee: '36만원',
+                                parkingRatio: '1.5대',
+                            }
+                        };
+                        
+                        return baseData[aptName] || {
+                            address: '서울시 송파구 잠실동',
+                            totalUnits: '1,200세대',
+                            constructionYear: '2010년',
+                            maxFloor: '25층',
+                            totalBuildings: '8개동',
+                            constructionCompany: '정보 없음',
+                            managementFee: '35만원',
+                            parkingRatio: '1.2대',
+                        };
+                    } catch (error) {
+                        console.error('호갱노노 데이터 가져오기 실패:', error);
+                        return null;
+                    }
+                },
+                
+                // 네이버 부동산 API 호출 (실거래가)
+                async getNaverPriceData(aptName) {
+                    try {
+                        console.log(`네이버 부동산 API 호출: ${aptName}`);
+                        // 실제 API 호출 코드 대신 데모 데이터 반환
+                        const priceData = {
+                            '잠실엘스': [
+                                { size: '84㎡', tradePrice: '21.5억', tradeDate: '2025.02', floor: '18층', jeonsePrice: '10.5억', jeonseDate: '2025.01', jeonseFloor: '15층' },
+                                { size: '109㎡', tradePrice: '26.8억', tradeDate: '2025.01', floor: '22층', jeonsePrice: '13.2억', jeonseDate: '2025.02', jeonseFloor: '12층' }
+                            ],
+                            '잠실리센츠': [
+                                { size: '84㎡', tradePrice: '22.2억', tradeDate: '2025.02', floor: '20층', jeonsePrice: '10.8억', jeonseDate: '2025.01', jeonseFloor: '10층' },
+                                { size: '109㎡', tradePrice: '27.5억', tradeDate: '2025.01', floor: '25층', jeonsePrice: '13.5억', jeonseDate: '2025.01', jeonseFloor: '8층' }
+                            ],
+                            '트리지움': [
+                                { size: '84㎡', tradePrice: '20.5억', tradeDate: '2025.03', floor: '15층', jeonsePrice: '9.8억', jeonseDate: '2025.02', jeonseFloor: '12층' },
+                                { size: '109㎡', tradePrice: '25.8억', tradeDate: '2025.02', floor: '18층', jeonsePrice: '12.5억', jeonseDate: '2025.01', jeonseFloor: '9층' }
+                            ],
+                            '레이크팰리스': [
+                                { size: '84㎡', tradePrice: '20.0억', tradeDate: '2025.02', floor: '16층', jeonsePrice: '9.5억', jeonseDate: '2025.02', jeonseFloor: '11층' },
+                                { size: '115㎡', tradePrice: '25.0억', tradeDate: '2025.01', floor: '20층', jeonsePrice: '12.0억', jeonseDate: '2025.01', jeonseFloor: '15층' }
+                            ]
+                        };
+                        
+                        return priceData[aptName] || [
+                            { size: '84㎡', tradePrice: '19.5억', tradeDate: '2025.01', floor: '15층', jeonsePrice: '9.2억', jeonseDate: '2025.01', jeonseFloor: '10층' },
+                            { size: '109㎡', tradePrice: '24.5억', tradeDate: '2025.01', floor: '18층', jeonsePrice: '11.5억', jeonseDate: '2025.01', jeonseFloor: '12층' }
+                        ];
+                    } catch (error) {
+                        console.error('네이버 부동산 데이터 가져오기 실패:', error);
+                        return null;
+                    }
+                },
+                
+                // 리치고 API 호출 (재건축 정보)
+                async getRebuildData() {
+                    try {
+                        console.log('리치고 API 호출: 재건축 정보');
+                        // 실제 API 호출 코드 대신 데모 데이터 반환
+                        return [
+                            { name: '잠실주공5단지', units: '3,930세대', size: '76~134㎡(29~51평형)', price: '35.0~42.0', year: '1978년', status: '착공 단계 (2022.11)', completion: '2027년 완공 예정' },
+                            { name: '아시아선수촌', units: '1,356세대', size: '76~160㎡(23~52평형)', price: '28.0~37.0', year: '1986년', status: '관리처분인가 완료 (2024.01)', completion: '2029년 완공 예정' },
+                            { name: '우성1,2,3차', units: '1,842세대', size: '76~174㎡(23~53평형)', price: '26.0~35.0', year: '1981년', status: '사업시행인가 단계 (2023.08)', completion: '2030년 완공 예정' },
+                            { name: '장미아파트', units: '1,284세대', size: '76~96㎡(23~30평형)', price: '24.0~32.0', year: '1983년', status: '조합설립 완료 (2023.05)', completion: '2031년 완공 예정' },
+                            { name: '미성아파트', units: '996세대', size: '76~126㎡(23~38평형)', price: '완공', year: '1983년', status: '르엘 입주 완료(2024년)', completion: '입주 완료' },
+                            { name: '진주아파트', units: '690세대', size: '76~134㎡(23~42평형)', price: '완공', year: '1982년', status: '래미안아이파크 입주 완료(2024년)', completion: '입주 완료' }
+                        ];
+                    } catch (error) {
+                        console.error('리치고 데이터 가져오기 실패:', error);
+                        return null;
+                    }
+                }
+            };
+
+            // PDF 변환 기능
+            window.jsPDF = window.jspdf.jsPDF;
+            
+            document.getElementById('pdf-btn').addEventListener('click', async function() {
+                // 로딩 오버레이 표시
+                document.querySelector('.loading-overlay').style.display = 'flex';
+                
+                // 모달 열려있으면 닫기
+                const modalElement = document.getElementById('apartmentModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+                
+                // 열려있는 아파트 상세 정보 행이 있다면 닫기
+                const detailRows = document.querySelectorAll('.apt-detail-row');
+                detailRows.forEach(row => row.remove());
+                
+                // 선택된 행의 하이라이트 제거
+                document.querySelectorAll('tr.apt-row').forEach(row => {
+                    row.classList.remove('selected-row');
+                });
+                
+                try {
+                    // 출력 시 제외할 요소 숨기기
+                    const hideBeforePrint = document.querySelectorAll('.action-buttons');
+                    hideBeforePrint.forEach(el => el.style.display = 'none');
+                    
+                    // A4 크기 설정
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const margins = 10;
+                    
+                    // HTML2Canvas 옵션
+                    const options = {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true
+                    };
+                    
+                    // 헤더 먼저 추가
+                    const header = document.querySelector('.header');
+                    let canvas = await html2canvas(header, options);
+                    let imgData = canvas.toDataURL('image/png');
+                    
+                    // 이미지 크기 계산
+                    let imgWidth = pdfWidth - (margins * 2);
+                    let imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    // 헤더 추가
+                    pdf.addImage(imgData, 'PNG', margins, margins, imgWidth, imgHeight);
+                    
+                    // 다음 요소의 Y 위치
+                    let currentY = margins + imgHeight + 5;
+                    
+                    // 모든 섹션을 순서대로 처리
+                    const sections = document.querySelectorAll('.section');
+                    
+                    for (let i = 0; i < sections.length; i++) {
+                        const section = sections[i];
+                        
+                        // 섹션 캡처
+                        canvas = await html2canvas(section, options);
+                        imgData = canvas.toDataURL('image/png');
+                        
+                        // 이미지 크기 계산
+                        imgWidth = pdfWidth - (margins * 2);
+                        imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        
+                        // 현재 페이지에 공간이 부족하면 새 페이지 추가
+                        if (currentY + imgHeight > pdfHeight - margins) {
+                            pdf.addPage();
+                            currentY = margins;
+                        }
+                        
+                        // 이미지 추가
+                        pdf.addImage(imgData, 'PNG', margins, currentY, imgWidth, imgHeight);
+                        
+                        // 다음 요소의 Y 위치 업데이트
+                        currentY += imgHeight + 5;
+                    }
+                    
+                    // 푸터 추가
+                    const footer = document.querySelector('.footer');
+                    canvas = await html2canvas(footer, options);
+                    imgData = canvas.toDataURL('image/png');
+                    
+                    // 이미지 크기 계산
+                    imgWidth = pdfWidth - (margins * 2);
+                    imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    
+                    // 현재 페이지에 공간이 부족하면 새 페이지 추가
+                    if (currentY + imgHeight > pdfHeight - margins) {
+                        pdf.addPage();
+                        currentY = margins;
+                    }
+                    
+                    // 푸터 이미지 추가
+                    pdf.addImage(imgData, 'PNG', margins, currentY, imgWidth, imgHeight);
+                    
+                    // PDF 저장
+                    pdf.save('잠실_아파트_리포트.pdf');
+                } catch (error) {
+                    console.error('PDF 생성 중 오류 발생:', error);
+                    alert('PDF 생성 중 오류가 발생했습니다: ' + error.message);
+                } finally {
+                    // 숨겨진 요소 다시 표시
+                    const hideBeforePrint = document.querySelectorAll('.action-buttons');
+                    hideBeforePrint.forEach(el => el.style.display = 'block');
+                    
+                    // 로딩 오버레이 숨기기
+                    document.querySelector('.loading-overlay').style.display = 'none';
+                }
+            });
+            
+            // 인쇄 기능
+            document.getElementById('print-btn').addEventListener('click', function() {
+                window.print();
+            });
+            
+            // 가격 추이 차트 데이터
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            const priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['2023년 1분기', '2023년 2분기', '2023년 3분기', '2023년 4분기', 
+                             '2024년 1분기', '2024년 2분기', '2024년 3분기', '2024년 4분기',
+                             '2025년 1분기', '2025년 2분기', '2025년 3분기', '2025년 4분기'],
+                    datasets: [
+                        {
+                            label: '잠실엘스',
+                            data: [17.0, 17.5, 18.0, 19.2, 20.5, 22.3, 24.0, 23.5, 22.8, 21.5, 21.2, 22.0],
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            tension: 0.1
+                        },
+                        {
+                            label: '잠실리센츠',
+                            data: [17.3, 17.8, 18.2, 19.5, 21.0, 22.8, 24.2, 24.0, 23.5, 22.5, 22.0, 22.5],
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            tension: 0.1
+                        },
+                        {
+                            label: '트리지움',
+                            data: [16.0, 16.5, 17.2, 18.0, 19.3, 21.0, 22.5, 22.0, 21.5, 20.6, 20.0, 20.5],
+                            borderColor: 'rgba(255, 206, 86, 1)',
+                            backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            tension: 0.1
+                        },
+                        {
+                            label: '레이크팰리스',
+                            data: [15.5, 16.0, 16.5, 17.5, 18.5, 20.0, 21.5, 21.0, 20.5, 19.8, 19.2, 19.5],
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            tension: 0.1
+                        },
+                        {
+                            label: '파크리오',
+                            data: [15.0, 15.5, 16.0, 17.0, 18.0, 19.5, 20.8, 20.5, 19.8, 18.5, 18.0, 18.5],
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '잠실 주요 아파트 84㎡ 매매가격 추이',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: '가격 (억원)'
+                            },
+                            min: 14,
+                            max: 28
+                        }
+                    }
+                }
+            });
+
+            // 레이더 차트 데이터
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            const radarChart = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['주거환경', '교통여건', '생활인프라', '교육환경', '미래가치'],
+                    datasets: [{
+                        label: '잠실 지역',
+                        data: [9.2, 9.5, 9.3, 8.8, 9.0],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+                    }, {
+                        label: '송파구 평균',
+                        data: [8.7, 8.8, 8.5, 8.6, 8.5],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(255, 99, 132, 1)'
+                    }, {
+                        label: '서울시 평균',
+                        data: [7.5, 8.0, 7.8, 7.6, 7.5],
+                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        pointBackgroundColor: 'rgba(255, 206, 86, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(255, 206, 86, 1)'
+                    }]
+                },
+                options: {
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 10
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '잠실 지역 환경 평가 (10점 만점)',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 평형별 비교 차트 - 25평형
+            const ctx25p = document.getElementById('chart25p').getContext('2d');
+            const chart25p = new Chart(ctx25p, {
+                type: 'bar',
+                data: {
+                    labels: ['엘스', '리센츠', '트리지움', '레이크팰리스', '파크리오'],
+                    datasets: [{
+                        label: '84㎡ 평균가(억원)',
+                        data: [17.0, 17.3, 16.0, 15.5, 15.0],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 14,
+                            max: 18
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // 평형별 비교 차트 - 33평형
+            const ctx33p = document.getElementById('chart33p').getContext('2d');
+            const chart33p = new Chart(ctx33p, {
+                type: 'bar',
+                data: {
+                    labels: ['엘스', '리센츠', '트리지움', '레이크팰리스', '파크리오'],
+                    datasets: [{
+                        label: '109㎡ 평균가(억원)',
+                        data: [21.5, 21.8, 20.0, 19.5, 18.8],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 18,
+                            max: 23
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // 아파트 데이터
+            const aptData = {
+                '잠실엘스': {
+                    priceHistory: [17.0, 17.5, 18.0, 19.2, 20.5, 22.3, 24.0, 23.5, 22.8, 21.5, 21.2, 22.0],
+                    color: 'rgba(255, 99, 132, 1)',
+                    tags: ['location', 'living', 'future'],
+                    recommendation: true
+                },
+                '잠실리센츠': {
+                    priceHistory: [17.3, 17.8, 18.2, 19.5, 21.0, 22.8, 24.2, 24.0, 23.5, 22.5, 22.0, 22.5],
+                    color: 'rgba(54, 162, 235, 1)',
+                    tags: ['location', 'investment', 'living'],
+                    recommendation: true
+                },
+                '트리지움': {
+                    priceHistory: [16.0, 16.5, 17.2, 18.0, 19.3, 21.0, 22.5, 22.0, 21.5, 20.6, 20.0, 20.5],
+                    color: 'rgba(255, 206, 86, 1)',
+                    tags: ['location', 'living'],
+                    recommendation: true
+                },
+                '레이크팰리스': {
+                    priceHistory: [15.5, 16.0, 16.5, 17.5, 18.5, 20.0, 21.5, 21.0, 20.5, 19.8, 19.2, 19.5],
+                    color: 'rgba(75, 192, 192, 1)',
+                    tags: ['living', 'investment'],
+                    recommendation: false
+                },
+                '파크리오': {
+                    priceHistory: [15.0, 15.5, 16.0, 17.0, 18.0, 19.5, 20.8, 20.5, 19.8, 18.5, 18.0, 18.5],
+                    color: 'rgba(153, 102, 255, 1)',
+                    tags: ['future'],
+                    recommendation: false
+                }
+            };
+            
+            // 모달 차트 객체
+            let modalPriceChart = null;
+            
+            // 아파트 행 클릭 이벤트 처리
+            document.querySelectorAll('.apt-row').forEach(row => {
+                row.addEventListener('click', function() {
+                    const aptName = this.getAttribute('data-apt-name');
+                    const aptType = this.getAttribute('data-apt-type');
+                    const aptRooms = this.getAttribute('data-apt-rooms');
+                    const aptBaths = this.getAttribute('data-apt-baths');
+                    const aptParking = this.getAttribute('data-apt-parking');
+                    const aptScore = this.getAttribute('data-apt-score');
+                    const aptPros = this.getAttribute('data-apt-pros');
+                    const aptCons = this.getAttribute('data-apt-cons');
+                    
+                    // 모달 정보 채우기
+                    document.getElementById('aptModalTitle').textContent = aptName + ' 상세 정보';
+                    document.getElementById('modal-apt-name').textContent = aptName;
+                    document.getElementById('modal-apt-type').textContent = aptType;
+                    document.getElementById('modal-apt-rooms').textContent = `${aptRooms}개 / ${aptBaths}개`;
+                    document.getElementById('modal-apt-parking').textContent = `${aptParking}대`;
+                    document.getElementById('modal-apt-score').textContent = aptScore;
+                    
+                    // 장점/단점 채우기
+                    const prosList = document.getElementById('modal-apt-pros');
+                    prosList.innerHTML = '';
+                    aptPros.split(', ').forEach(pro => {
+                        const li = document.createElement('li');
+                        li.textContent = pro;
+                        prosList.appendChild(li);
+                    });
+                    
+                    const consList = document.getElementById('modal-apt-cons');
+                    consList.innerHTML = '';
+                    aptCons.split(', ').forEach(con => {
+                        const li = document.createElement('li');
+                        li.textContent = con;
+                        consList.appendChild(li);
+                    });
+                    
+                    // 태그 하이라이트
+                    document.querySelectorAll('.conclusion-tag').forEach(tag => {
+                        tag.classList.remove('highlight');
+                    });
+                    
+                    if (aptData[aptName]) {
+                        aptData[aptName].tags.forEach(tagId => {
+                            document.getElementById('tag-' + tagId).classList.add('highlight');
+                        });
+                    }
+                    
+                    // 모달 가격 차트 업데이트
+                    const ctxModalPrice = document.getElementById('modal-price-trend-chart').getContext('2d');
+                    
+                    // 이전 차트 있으면 파괴
+                    if (modalPriceChart) {
+                        modalPriceChart.destroy();
+                    }
+                    
+                    // 새 차트 생성
+                    modalPriceChart = new Chart(ctxModalPrice, {
+                        type: 'line',
+                        data: {
+                            labels: ['2023년 1분기', '2023년 2분기', '2023년 3분기', '2023년 4분기', 
+                                     '2024년 1분기', '2024년 2분기', '2024년 3분기', '2024년 4분기',
+                                     '2025년 1분기', '2025년 2분기', '2025년 3분기', '2025년 4분기'],
+                            datasets: [{
+                                label: aptName + ' 가격 추이',
+                                data: aptData[aptName] ? aptData[aptName].priceHistory : [],
+                                borderColor: aptData[aptName] ? aptData[aptName].color : 'rgba(0, 0, 0, 1)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                pointRadius: 4,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: aptName + ' 가격 추이 (84㎡ 기준, 단위: 억원)',
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    title: {
+                                        display: true,
+                                        text: '가격 (억원)'
+                                    },
+                                    min: 14,
+                                    max: 28
+                                }
+                            }
+                        }
+                    });
+                    
+                    // 모달 표시
+                    const modal = new bootstrap.Modal(document.getElementById('apartmentModal'));
+                    modal.show();
+                });
+            });
+
+            // 클릭 가능한 아파트 이름 클릭 이벤트 추가
+            document.querySelectorAll('.clickable-apt').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    // 이벤트 버블링 방지 (부모 요소의 클릭 이벤트가 중복 실행되지 않도록)
+                    e.stopPropagation();
+                    e.preventDefault();
+                    
+                    console.log('클릭 이벤트 발생: ', this.textContent);
+                    
+                    // 부모 행(tr)에서 데이터 가져오기
+                    const parentRow = this.closest('tr.apt-row');
+                    
+                    // 부모 행이 없는 경우 아파트 이름만으로 처리
+                    const aptName = parentRow ? parentRow.getAttribute('data-apt-name') : this.textContent.trim();
+                    
+                    // 부모 행의 데이터 속성 가져오기 (없을 경우 기본값 사용)
+                    const aptType = parentRow ? parentRow.getAttribute('data-apt-type') : '정보 없음';
+                    const aptRooms = parentRow ? parentRow.getAttribute('data-apt-rooms') : '3';
+                    const aptBaths = parentRow ? parentRow.getAttribute('data-apt-baths') : '2';
+                    const aptParking = parentRow ? parentRow.getAttribute('data-apt-parking') : '1.0';
+                    const aptScore = parentRow ? parentRow.getAttribute('data-apt-score') : '80';
+                    const aptPros = parentRow ? parentRow.getAttribute('data-apt-pros') : '정보 없음';
+                    const aptCons = parentRow ? parentRow.getAttribute('data-apt-cons') : '정보 없음';
+                    
+                    console.log('데이터 로드 완료: ', aptName, aptType);
+                    
+                    // 모달 정보 채우기
+                    document.getElementById('aptModalTitle').textContent = aptName + ' 상세 정보';
+                    document.getElementById('modal-apt-full-name').textContent = aptName; // 여기에서 full-name 설정 추가
+                    document.getElementById('modal-apt-name').textContent = aptName;
+                    document.getElementById('modal-apt-type').textContent = aptType;
+                    document.getElementById('modal-apt-rooms').textContent = `${aptRooms}개 / ${aptBaths}개`;
+                    document.getElementById('modal-apt-parking').textContent = `${aptParking}대`;
+                    document.getElementById('modal-apt-score').textContent = aptScore;
+                    
+                    // 추가 정보 세팅
+                    document.getElementById('modal-apt-address').textContent = '송파구 잠실동';
+                    document.getElementById('modal-apt-units').textContent = '1,500세대';
+                    document.getElementById('modal-apt-year').textContent = '2008년';
+                    document.getElementById('modal-apt-floors').textContent = '35층';
+                    document.getElementById('modal-apt-buildings').textContent = '12개동';
+                    
+                    // 장점/단점 채우기
+                    const prosList = document.getElementById('modal-apt-pros');
+                    prosList.innerHTML = '';
+                    aptPros.split(', ').forEach(pro => {
+                        const li = document.createElement('li');
+                        li.textContent = pro;
+                        prosList.appendChild(li);
+                    });
+                    
+                    const consList = document.getElementById('modal-apt-cons');
+                    consList.innerHTML = '';
+                    aptCons.split(', ').forEach(con => {
+                        const li = document.createElement('li');
+                        li.textContent = con;
+                        consList.appendChild(li);
+                    });
+                    
+                    // 태그 하이라이트
+                    document.querySelectorAll('.conclusion-tag').forEach(tag => {
+                        tag.classList.remove('highlight');
+                    });
+                    
+                    if (aptData[aptName]) {
+                        aptData[aptName].tags.forEach(tagId => {
+                            const tagElement = document.getElementById('tag-' + tagId);
+                            if (tagElement) {
+                                tagElement.classList.add('highlight');
+                            }
+                        });
+                    }
+                    
+                    // 실거래가 정보 추가
+                    const tradeInfoBody = document.getElementById('trade-info-body');
+                    tradeInfoBody.innerHTML = '';
+                    
+                    // 25평형 실거래가 정보
+                    const row1 = document.createElement('tr');
+                    row1.innerHTML = `
+                        <td>84㎡(25평형)</td>
+                        <td>${aptName === '잠실엘스' ? '21.5억' : aptName === '잠실리센츠' ? '22.2억' : '20억'}</td>
+                        <td>2025.02</td>
+                        <td>18층</td>
+                        <td>${aptName === '잠실엘스' ? '10.5억' : aptName === '잠실리센츠' ? '10.8억' : '9.5억'}</td>
+                        <td>2025.01</td>
+                        <td>15층</td>
+                    `;
+                    tradeInfoBody.appendChild(row1);
+                    
+                    // 33평형 실거래가 정보
+                    const row2 = document.createElement('tr');
+                    row2.innerHTML = `
+                        <td>109㎡(33평형)</td>
+                        <td>${aptName === '잠실엘스' ? '27.2억' : aptName === '잠실리센츠' ? '26.8억' : '24.5억'}</td>
+                        <td>2025.02</td>
+                        <td>22층</td>
+                        <td>${aptName === '잠실엘스' ? '13.2억' : aptName === '잠실리센츠' ? '13.0억' : '12.0억'}</td>
+                        <td>2025.01</td>
+                        <td>19층</td>
+                    `;
+                    tradeInfoBody.appendChild(row2);
+                    
+                    // 모달 가격 차트 업데이트
+                    const ctxModalPrice = document.getElementById('modal-price-trend-chart').getContext('2d');
+                    
+                    console.log('차트 컨텍스트 로드: ', ctxModalPrice);
+                    
+                    // 이전 차트 있으면 파괴
+                    if (modalPriceChart) {
+                        modalPriceChart.destroy();
+                    }
+                    
+                    // 가격 데이터 확인
+                    const priceData = aptData[aptName] ? aptData[aptName].priceHistory : 
+                        [18.5, 19.0, 19.5, 20.0, 21.5, 23.0, 25.0, 24.0, 23.0, 22.0, 21.5, 22.0]; // 기본 가격 데이터 (2025년 기준으로 업데이트)
+                    const chartColor = aptData[aptName] ? aptData[aptName].color : 'rgba(0, 123, 255, 1)';
+                    
+                    // 새 차트 생성
+                    modalPriceChart = new Chart(ctxModalPrice, {
+                        type: 'line',
+                        data: {
+                            labels: ['2023년 1분기', '2023년 2분기', '2023년 3분기', '2023년 4분기', 
+                                    '2024년 1분기', '2024년 2분기', '2024년 3분기', '2024년 4분기',
+                                    '2025년 1분기', '2025년 2분기', '2025년 3분기', '2025년 4분기'],
+                            datasets: [{
+                                label: aptName + ' 가격 추이',
+                                data: priceData,
+                                borderColor: chartColor,
+                                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                pointRadius: 4,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: aptName + ' 가격 추이 (84㎡ 기준, 단위: 억원)',
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    title: {
+                                        display: true,
+                                        text: '가격 (억원)'
+                                    },
+                                    min: 14,
+                                    max: 28
+                                }
+                            }
+                        }
+                    });
+                    
+                    // 비교 차트 업데이트
+                    // 비교 아파트 이름 업데이트
+                    document.getElementById('current-apt-name').textContent = aptName;
+                    document.getElementById('compare-apt-name').textContent = aptName === '잠실엘스' ? '잠실리센츠' : '잠실엘스';
+                    
+                    // 비교 가격 정보 업데이트
+                    document.getElementById('current-sale-price').textContent = aptName === '잠실엘스' ? '21.5억' : 
+                                                                             aptName === '잠실리센츠' ? '22.2억' : '20억';
+                    document.getElementById('compare-sale-price').textContent = aptName === '잠실엘스' ? '22.2억' : '21.5억';
+                    
+                    document.getElementById('current-jeonse-price').textContent = aptName === '잠실엘스' ? '10.5억' : 
+                                                                               aptName === '잠실리센츠' ? '10.8억' : '9.5억';
+                    document.getElementById('compare-jeonse-price').textContent = aptName === '잠실엘스' ? '10.8억' : '10.5억';
+                    
+                    document.getElementById('current-per-pyeong').textContent = aptName === '잠실엘스' ? '8,600만원' : 
+                                                                                 aptName === '잠실리센츠' ? '9,250만원' : '8,000만원';
+                    document.getElementById('compare-per-pyeong').textContent = aptName === '잠실엘스' ? '9,250만원' : '8,600만원';
+                    
+                    console.log('모달 데이터 로딩 완료');
+                    
+                    // 모달 표시
+                    try {
+                        const modal = new bootstrap.Modal(document.getElementById('apartmentModal'));
+                        modal.show();
+                        console.log('모달 표시 완료');
+                    } catch(e) {
+                        console.error('모달 오픈 에러:', e);
+                        alert(aptName + ' 상세 정보를 표시할 수 없습니다. 페이지를 새로고침해 주세요.');
+                    }
+                });
+            });
+
+            // 모달 PDF 생성 기능
+            document.getElementById('modal-pdf-btn').addEventListener('click', async function() {
+                // 로딩 오버레이 표시
+                document.querySelector('.loading-overlay').style.display = 'flex';
+                
+                try {
+                    const modalContent = document.getElementById('apartment-modal-content');
+                    
+                    // A4 크기 설정
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const margins = 10;
+                    
+                    // HTML2Canvas 옵션
+                    const options = {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true
+                    };
+                    
+                    // 모달 섹션들 (순서대로 캡처)
+                    const sections = modalContent.querySelectorAll('.row');
+                    
+                    // 제목과 기본 정보 (첫 번째 섹션)
+                    let currentY = margins;
+                    
+                    // 아파트 이름 가져오기
+                    const aptName = document.getElementById('modal-apt-full-name').textContent;
+                    
+                    // 제목 추가 (텍스트로)
+                    pdf.setFontSize(18);
+                    pdf.setTextColor(0, 86, 179); // #0056b3
+                    pdf.text(`${aptName} 상세 정보`, pdfWidth / 2, currentY + 10, { align: 'center' });
+                    currentY += 20;
+                    
+                    // 각 섹션 순서대로 캡처하여 추가
+                    for (let i = 0; i < sections.length; i++) {
+                        const section = sections[i];
+                        
+                        // 섹션 캡처
+                        const canvas = await html2canvas(section, options);
+                        const imgData = canvas.toDataURL('image/png');
+                        
+                        // 이미지 크기 계산
+                        const imgWidth = pdfWidth - (margins * 2);
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        
+                        // 새 페이지가 필요한지 확인
+                        if (currentY + imgHeight > pdfHeight - margins) {
+                            pdf.addPage();
+                            currentY = margins;
+                        }
+                        
+                        // 이미지 추가
+                        pdf.addImage(imgData, 'PNG', margins, currentY, imgWidth, imgHeight);
+                        
+                        // 다음 요소 위치 업데이트
+                        currentY += imgHeight + 10;
+                    }
+                    
+                    // PDF 저장
+                    pdf.save(`${aptName}_상세정보.pdf`);
+                } catch (error) {
+                    console.error('모달 PDF 생성 중 오류 발생:', error);
+                    alert('PDF 생성 중 오류가 발생했습니다: ' + error.message);
+                } finally {
+                    // 로딩 오버레이 숨기기
+                    document.querySelector('.loading-overlay').style.display = 'none';
+                }
+            });
+
+            // 클릭 가능한 아파트 이름 클릭 이벤트를 인라인 토글 방식으로 변경
+            document.querySelectorAll('.clickable-apt').forEach(element => {
+                element.addEventListener('click', async function(e) {
+                    // 이벤트 버블링 방지
+                    e.stopPropagation();
+                    e.preventDefault();
+                    
+                    console.log('아파트 이름 클릭됨:', this.textContent);
+                    
+                    // 부모 행에서 데이터 가져오기
+                    const parentRow = this.closest('tr.apt-row');
+                    
+                    // 아파트 이름 가져오기
+                    const aptName = parentRow ? parentRow.getAttribute('data-apt-name') : this.textContent.trim();
+                    
+                    // 기존에 열려있는 상세 정보 행이 있다면 제거
+                    const existingDetailRow = document.querySelector('.apt-detail-row');
+                    if (existingDetailRow) {
+                        existingDetailRow.remove();
+                        
+                        // 이전에 선택되었던 행의 하이라이트 제거
+                        document.querySelectorAll('tr.apt-row').forEach(row => {
+                            row.classList.remove('selected-row');
+                        });
+                        
+                        // 만약 같은 행의 상세 정보를 닫는 것이라면 함수 종료
+                        if (existingDetailRow.getAttribute('data-apt-name') === aptName) {
+                            return;
+                        }
+                    }
+                    
+                    // 부모 행 하이라이트 적용
+                    if (parentRow) {
+                        parentRow.classList.add('selected-row');
+                    }
+                    
+                    // 아파트 데이터 가져오기
+                    const aptType = parentRow ? parentRow.getAttribute('data-apt-type') : '정보 없음';
+                    const aptRooms = parentRow ? parentRow.getAttribute('data-apt-rooms') : '3';
+                    const aptBaths = parentRow ? parentRow.getAttribute('data-apt-baths') : '2';
+                    const aptParking = parentRow ? parentRow.getAttribute('data-apt-parking') : '1.0';
+                    const aptScore = parentRow ? parentRow.getAttribute('data-apt-score') : '80';
+                    const aptPros = parentRow ? parentRow.getAttribute('data-apt-pros') : '정보 없음';
+                    const aptCons = parentRow ? parentRow.getAttribute('data-apt-cons') : '정보 없음';
+                    
+                    // 외부 데이터 소스에서 정보 가져오기 (비동기)
+                    const loadingHTML = `
+                        <td colspan="5">
+                            <div class="apt-detail-container">
+                                <div class="d-flex justify-content-center align-items-center p-5">
+                                    <div class="spinner-border text-primary me-3" role="status"></div>
+                                    <span>아파트 정보를 불러오는 중입니다...</span>
+                                </div>
+                            </div>
+                        </td>
+                    `;
+                    
+                    // 로딩 표시를 위한 임시 행 생성
+                    const loadingRow = document.createElement('tr');
+                    loadingRow.className = 'apt-detail-row';
+                    loadingRow.innerHTML = loadingHTML;
+                    
+                    // 로딩 행 추가
+                    if (parentRow) {
+                        parentRow.insertAdjacentElement('afterend', loadingRow);
+                    }
+                    
+                    try {
+                        // 여러 API 호출 병렬 처리
+                        const [rankData, hogangData, priceData] = await Promise.all([
+                            apiSources.getRealRankersData(aptName),
+                            apiSources.getHogangData(aptName),
+                            apiSources.getNaverPriceData(aptName)
+                        ]);
+                        
+                        // 가격 데이터 확인
+                        const chartData = aptData[aptName] ? aptData[aptName].priceHistory : 
+                            [18.5, 19.0, 19.5, 20.0, 21.5, 23.0, 25.0, 24.0, 23.0, 22.0, 21.5, 22.0];
+                        
+                        // 로딩 행 제거
+                        loadingRow.remove();
+                        
+                        // 새로운 상세 정보 행 생성
+                        const detailRow = document.createElement('tr');
+                        detailRow.className = 'apt-detail-row';
+                        detailRow.setAttribute('data-apt-name', aptName);
+                        
+                        // 상세 정보 내용 생성 (API 데이터 사용)
+                        detailRow.innerHTML = `
+                            <td colspan="5">
+                                <div class="apt-detail-container">
+                                    <div class="apt-detail-header">
+                                        <h4>${aptName} 상세 정보</h4>
+                                        <button class="btn btn-sm btn-secondary close-detail-btn">닫기</button>
+                                    </div>
+                                    <div class="apt-detail-content">
+                                        <!-- 기본 정보 및 리얼랭커스 랭킹 -->
+                                        <div class="row mb-4">
+                                            <div class="col-md-7">
+                                                <h5 class="mb-3 border-bottom pb-2">기본 정보 (호갱노노)</h5>
+                                                <table class="table table-bordered">
+                                                    <tr>
+                                                        <th style="width: 25%">주소</th>
+                                                        <td>${hogangData.address}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>세대수</th>
+                                                        <td>${hogangData.totalUnits}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>준공년도</th>
+                                                        <td>${hogangData.constructionYear}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>최고층</th>
+                                                        <td>${hogangData.maxFloor}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>동 수</th>
+                                                        <td>${hogangData.totalBuildings}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>시공사</th>
+                                                        <td>${hogangData.constructionCompany}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>관리비</th>
+                                                        <td>${hogangData.managementFee} (84㎡ 기준)</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>주차</th>
+                                                        <td>세대당 ${hogangData.parkingRatio}대</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <h5 class="mb-3 border-bottom pb-2">투자 지수 (리얼랭커스)</h5>
+                                                <div class="card mb-3">
+                                                    <div class="card-body text-center">
+                                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                                            <div class="rank-badge rank-${rankData.investmentRank.charAt(0)}">${rankData.investmentRank}</div>
+                                                            <h3 class="mb-0">투자 등급</h3>
+                                                            <div class="score-circle">${rankData.rankScore}</div>
+                                                        </div>
+                                                        <p class="card-text mb-0">종합 투자 점수</p>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="card">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="card-title">${rankData.priceGrowth}%</h5>
+                                                                <p class="card-text small">연간 가격 상승률</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="card">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="card-title">${rankData.transactionVolume}건</h5>
+                                                                <p class="card-text small">월평균 거래량</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 mt-3">
+                                                        <div class="card">
+                                                            <div class="card-body">
+                                                                <div class="d-flex justify-content-between">
+                                                                    <p class="card-text mb-0">시장 분위기:</p>
+                                                                    <p class="card-text mb-0 text-primary">${rankData.marketSentiment}</p>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between mt-2">
+                                                                    <p class="card-text mb-0">미래 발전 가능성:</p>
+                                                                    <p class="card-text mb-0 text-primary">${rankData.futurePotential}점</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 실거래가 정보 (네이버 부동산) -->
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <h5 class="mb-3 border-bottom pb-2">실거래가 정보 (네이버 부동산)</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-striped">
+                                                        <thead class="table-primary">
+                                                            <tr>
+                                                                <th>평형</th>
+                                                                <th>매매가</th>
+                                                                <th>거래일</th>
+                                                                <th>층수</th>
+                                                                <th>전세가</th>
+                                                                <th>거래일</th>
+                                                                <th>층수</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            ${priceData.map(item => `
+                                                            <tr>
+                                                                <td>${item.size}</td>
+                                                                <td>${item.tradePrice}</td>
+                                                                <td>${item.tradeDate}</td>
+                                                                <td>${item.floor}</td>
+                                                                <td>${item.jeonsePrice}</td>
+                                                                <td>${item.jeonseDate}</td>
+                                                                <td>${item.jeonseFloor}</td>
+                                                            </tr>
+                                                            `).join('')}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 장단점 정보 -->
+                                        <div class="row mb-4">
+                                            <div class="col-md-6">
+                                                <div class="pros">
+                                                    <h5>장점</h5>
+                                                    <ul>
+                                                        ${aptPros.split(', ').map(pro => `<li>${pro}</li>`).join('')}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="cons">
+                                                    <h5>단점</h5>
+                                                    <ul>
+                                                        ${aptCons.split(', ').map(con => `<li>${con}</li>`).join('')}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 가격 추이 차트 -->
+                                        <div class="row mt-4">
+                                            <div class="col-12">
+                                                <h5 class="mb-3 border-bottom pb-2">최근 3년간 가격 추이 (84㎡ 기준)</h5>
+                                                <canvas id="inline-price-chart-${aptName.replace(/\s+/g, '-')}" height="250"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        `;
+                        
+                        // 행 추가
+                        if (parentRow) {
+                            parentRow.insertAdjacentElement('afterend', detailRow);
+                        } else {
+                            // 부모 행이 없는 경우 (예외 상황)
+                            const tableBody = this.closest('table').querySelector('tbody');
+                            if (tableBody) {
+                                tableBody.appendChild(detailRow);
+                            }
+                        }
+                        
+                        // 닫기 버튼에 이벤트 리스너 추가
+                        detailRow.querySelector('.close-detail-btn').addEventListener('click', function() {
+                            detailRow.remove();
+                            if (parentRow) {
+                                parentRow.classList.remove('selected-row');
+                            }
+                        });
+                        
+                        // 가격 차트 그리기
+                        setTimeout(() => {
+                            const chartCanvas = document.getElementById(`inline-price-chart-${aptName.replace(/\s+/g, '-')}`);
+                            if (chartCanvas) {
+                                const chartColor = aptData[aptName] ? aptData[aptName].color : 'rgba(0, 123, 255, 1)';
+                                
+                                new Chart(chartCanvas, {
+                                    type: 'line',
+                                    data: {
+                                        labels: ['2023년 1분기', '2023년 2분기', '2023년 3분기', '2023년 4분기', 
+                                                '2024년 1분기', '2024년 2분기', '2024년 3분기', '2024년 4분기',
+                                                '2025년 1분기', '2025년 2분기', '2025년 3분기', '2025년 4분기'],
+                                        datasets: [{
+                                            label: aptName + ' 가격 추이',
+                                            data: chartData,
+                                            borderColor: chartColor,
+                                            backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                            pointRadius: 4,
+                                            tension: 0.1
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        plugins: {
+                                            title: {
+                                                display: true,
+                                                text: aptName + ' 가격 추이 (84㎡ 기준, 단위: 억원)',
+                                                font: {
+                                                    size: 14
+                                                }
+                                            }
+                                        },
+                                        scales: {
+                                            y: {
+                                                beginAtZero: false,
+                                                title: {
+                                                    display: true,
+                                                    text: '가격 (억원)'
+                                                },
+                                                min: 14,
+                                                max: 28
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }, 100);
+                    } catch (error) {
+                        console.error('데이터 로딩 중 오류 발생:', error);
+                        
+                        // 오류 발생시 기본 정보로 표시
+                        loadingRow.innerHTML = `
+                            <td colspan="5">
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    외부 데이터를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.
+                                </div>
+                            </td>
+                        `;
+                    }
+                });
+            });
+
+            // 재건축 예정 아파트 정보 표시 함수
+            async function loadRebuildingInfo() {
+                try {
+                    // 로딩 표시
+                    const rebuildTable = document.querySelector('.section:nth-of-type(3) table tbody');
+                    rebuildTable.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="spinner-border text-primary me-3" role="status"></div>
+                                <span>재건축 정보를 불러오는 중입니다...</span>
+                            </td>
+                        </tr>
+                    `;
+                    
+                    // 리치고 API에서 재건축 정보 가져오기
+                    const rebuildData = await apiSources.getRebuildData();
+                    
+                    // 테이블 내용 업데이트
+                    rebuildTable.innerHTML = '';
+                    rebuildData.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.name}</td>
+                            <td>${item.units}</td>
+                            <td>${item.size}</td>
+                            <td>${item.price}</td>
+                            <td>${item.year}</td>
+                            <td>${item.status} <br><small class="text-muted">${item.completion}</small></td>
+                        `;
+                        rebuildTable.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('재건축 정보 로딩 실패:', error);
+                }
+            }
+
+            // 페이지 로드 시 재건축 정보 가져오기
+            document.addEventListener('DOMContentLoaded', function() {
+                // 기존 페이지 로드 이벤트 코드...
+                
+                // 재건축 정보 로드
+                loadRebuildingInfo();
+            });
+        </script>
+    </div>
+</body>
+</html> 
